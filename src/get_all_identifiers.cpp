@@ -4,7 +4,7 @@ int main(int argc, char** argv){
             std::cerr<<"Syntax: ./grabidentifiers [srcML file name]"<<std::endl;
             return 0;
         }
-        WordsFromArchivePolicy* cat = new WordsFromArchivePolicy();
+        WordsFromArchivePolicy* cat = new WordsFromArchivePolicy(false);
         srcSAXController control(argv[1]);
         srcSAXEventDispatch::srcSAXEventDispatcher<> handler({cat}, false);
         control.parse(&handler); //Start parsing

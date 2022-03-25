@@ -7,18 +7,28 @@
 #include <ParamTypePolicy.hpp>
 #include <srcSAXEventDispatcher.hpp>
 #include <FunctionSignaturePolicy.hpp>
+#include <vector>
+
+struct IdentifierData{
+    std::string type;
+    std::string name;
+    std::string context;
+};
 
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     private:
-        void OutputIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
-            std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
+        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
+            if(!shouldTakeSample){
+                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
+            }else{
+                
+            }
         }
     public:
-        ~WordsFromArchivePolicy(){};
-        WordsFromArchivePolicy(std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
+        WordsFromArchivePolicy(bool shouldTakeSample, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
             InitializeEventHandlers();
-        
+            this->shouldTakeSample = shouldTakeSample;
             declPolicy.AddListener(this);
             paramPolicy.AddListener(this);
             functionPolicy.AddListener(this);
@@ -29,23 +39,23 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 declarationData = *policy->Data<DeclData>();
                 if(!(declarationData.nameOfIdentifier.empty()||declarationData.nameOfType.empty())){
                     if(ctx.IsOpen(ParserState::function)){
-                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION");
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION");
                     }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() && !declarationData.nameOfIdentifier.empty()){
-                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE");
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE");
                     }
                 }
             }else if(typeid(ParamTypePolicy) == typeid(*policy)){
                 parameterData = *policy->Data<DeclData>();
                 if(!(parameterData.nameOfIdentifier.empty() || parameterData.nameOfType.empty())){
-                    OutputIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER");
+                    CollectIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER");
                 }
             }else if(typeid(FunctionSignaturePolicy) == typeid(*policy)){
                 functionData = *policy->Data<SignatureData>();
                 if(!(functionData.name.empty() || functionData.returnType.empty())){
                     if(functionData.hasAliasedReturn) functionData.returnType+="*";
-                    OutputIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME");
+                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME");
                     for(auto param : functionData.parameters){
-                        OutputIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
+                        CollectIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
                     }
                 }
             }
@@ -57,6 +67,8 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         }
         
     private:
+        bool shouldTakeSample;
+        std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;
 
@@ -79,7 +91,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             };
             closeEventMap[ParserState::classn] = [this](srcSAXEventContext& ctx){
                 if(!ctx.currentClassName.empty())
-                    OutputIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
+                    CollectIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
             };
             closeEventMap[ParserState::functionblock] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->RemoveListenerDispatch(&functionPolicy);
