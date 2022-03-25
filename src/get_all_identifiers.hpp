@@ -1,11 +1,6 @@
 #ifndef WORDSFROMARCHIVEPOLICY
 #define WORDSFROMARCHIVEPOLICY
 
-#include <vector>
-#include <ctype.h>
-#include <exception>
-#include <unordered_map>
-#include <unordered_set>
 #include <ClassPolicy.hpp>
 #include <srcSAXHandler.hpp>
 #include <DeclTypePolicy.hpp>
@@ -16,9 +11,8 @@
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     private:
-        std::string AnnotateIdentifier(std::string identifierType, std::string identifierName, std::string codeContext){
+        void OutputIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
             std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
-            return "";
         }
     public:
         ~WordsFromArchivePolicy(){};
@@ -32,26 +26,26 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         void Notify(const PolicyDispatcher *policy, const srcSAXEventDispatch::srcSAXEventContext &ctx) override {
             using namespace srcSAXEventDispatch;
             if(typeid(DeclTypePolicy) == typeid(*policy)){
-                decldata = *policy->Data<DeclData>();
-                if(!(decldata.nameOfIdentifier.empty()||decldata.nameOfType.empty())){
+                declarationData = *policy->Data<DeclData>();
+                if(!(declarationData.nameOfIdentifier.empty()||declarationData.nameOfType.empty())){
                     if(ctx.IsOpen(ParserState::function)){
-                        AnnotateIdentifier(decldata.nameOfType, decldata.nameOfIdentifier, "DECLARATION");
-                    }else if(ctx.IsOpen(ParserState::classn) && !decldata.nameOfContainingClass.empty() && !decldata.nameOfType.empty() && !decldata.nameOfIdentifier.empty()){
-                        AnnotateIdentifier(decldata.nameOfType, decldata.nameOfIdentifier, "ATTRIBUTE");
+                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION");
+                    }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() && !declarationData.nameOfIdentifier.empty()){
+                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE");
                     }
                 }
             }else if(typeid(ParamTypePolicy) == typeid(*policy)){
-                paramdata = *policy->Data<DeclData>();
-                if(!(paramdata.nameOfIdentifier.empty() || paramdata.nameOfType.empty())){
-                    AnnotateIdentifier(paramdata.nameOfType, paramdata.nameOfIdentifier, "PARAMETER");
+                parameterData = *policy->Data<DeclData>();
+                if(!(parameterData.nameOfIdentifier.empty() || parameterData.nameOfType.empty())){
+                    OutputIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER");
                 }
             }else if(typeid(FunctionSignaturePolicy) == typeid(*policy)){
-                functiondata = *policy->Data<SignatureData>();
-                if(!(functiondata.name.empty() || functiondata.returnType.empty())){
-                    if(functiondata.hasAliasedReturn) functiondata.returnType+="*";
-                    AnnotateIdentifier(functiondata.returnType, functiondata.name, "FUNCTION NAME");
-                    for(auto param : functiondata.parameters){
-                        AnnotateIdentifier(functiondata.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
+                functionData = *policy->Data<SignatureData>();
+                if(!(functionData.name.empty() || functionData.returnType.empty())){
+                    if(functionData.hasAliasedReturn) functionData.returnType+="*";
+                    OutputIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME");
+                    for(auto param : functionData.parameters){
+                        OutputIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
                     }
                 }
             }
@@ -64,13 +58,13 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         
     private:
         DeclTypePolicy declPolicy;
-        DeclData decldata;
+        DeclData declarationData;
 
         ParamTypePolicy paramPolicy;
-        DeclData paramdata;
+        DeclData parameterData;
 
         FunctionSignaturePolicy functionPolicy;
-        SignatureData functiondata;
+        SignatureData functionData;
 
         void InitializeEventHandlers(){
             using namespace srcSAXEventDispatch;
@@ -85,7 +79,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             };
             closeEventMap[ParserState::classn] = [this](srcSAXEventContext& ctx){
                 if(!ctx.currentClassName.empty())
-                    AnnotateIdentifier("class", ctx.currentClassName, "CLASS");
+                    OutputIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
             };
             closeEventMap[ParserState::functionblock] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->RemoveListenerDispatch(&functionPolicy);
@@ -95,7 +89,6 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             };
             closeEventMap[ParserState::parameterlist] = [this](srcSAXEventContext& ctx) {
                 ctx.dispatcher->RemoveListenerDispatch(&paramPolicy);
-                //ctx.dispatcher->RemoveListenerDispatch(&functionPolicy);
             };
         }
 };
