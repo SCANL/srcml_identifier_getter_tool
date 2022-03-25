@@ -16,6 +16,7 @@ Please clone recursive since we are currently using submodules.
 
 ## Help, I don't know what srcML is
 You can get srcML from here -- https://www.srcml.org/
+
 Once you download it and install (or you can just use the executable), you do `srcml <name_of_file_or_directory_containing_code>` and it will create a srcML archive from that directory or code file. You can redirect its output into a file using `>`, or use `srcml -o <FILE>` to output to a specific file. If you need help, use `srcml --help`.
 
 # Limitations
