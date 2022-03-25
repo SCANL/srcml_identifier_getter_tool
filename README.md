@@ -1,0 +1,1 @@
+# srcml_identifier_getter_tool
