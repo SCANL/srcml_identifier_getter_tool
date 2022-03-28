@@ -8,8 +8,11 @@
 #include <srcSAXEventDispatcher.hpp>
 #include <FunctionSignaturePolicy.hpp>
 #include <vector>
+#include <algorithm>
+#include <random>
 
 struct IdentifierData{
+    IdentifierData(std::string type, std::string name, std::string context) : type{type}, name{name}, context{context} {}
     std::string type;
     std::string name;
     std::string context;
@@ -17,14 +20,6 @@ struct IdentifierData{
 
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
-    private:
-        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
-            if(!shouldTakeSample){
-                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
-            }else{
-                
-            }
-        }
     public:
         WordsFromArchivePolicy(bool shouldTakeSample, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
             InitializeEventHandlers();
@@ -60,7 +55,25 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 }
             }
         }
+        
         void NotifyWrite(const PolicyDispatcher *policy, srcSAXEventDispatch::srcSAXEventContext &ctx){}
+        
+        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
+            if(!shouldTakeSample){
+                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
+            }else{
+                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext));        
+            }
+        }
+
+        void GenerateSampleOfIdentifiers(int sampleSize){
+            std::vector<IdentifierData> sampleOfIdentifiers;
+            std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
+                        sampleSize, std::mt19937{std::random_device{}()});
+            for(auto identifier : sampleOfIdentifiers){
+                std::cout<<identifier.name<<std::endl;
+            }
+        }
     protected:
         void *DataInner() const override {
             return (void*)0; // export profile to listeners
@@ -80,6 +93,8 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
 
         void InitializeEventHandlers(){
             using namespace srcSAXEventDispatch;
+            
+            //Open events
             openEventMap[ParserState::declstmt] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->AddListenerDispatch(&declPolicy);
             };
@@ -89,6 +104,8 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             openEventMap[ParserState::function] = [this](srcSAXEventContext& ctx) {
                 ctx.dispatcher->AddListenerDispatch(&functionPolicy);
             };
+
+            //Close events
             closeEventMap[ParserState::classn] = [this](srcSAXEventContext& ctx){
                 if(!ctx.currentClassName.empty())
                     CollectIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
@@ -101,6 +118,9 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             };
             closeEventMap[ParserState::parameterlist] = [this](srcSAXEventContext& ctx) {
                 ctx.dispatcher->RemoveListenerDispatch(&paramPolicy);
+            };
+            closeEventMap[ParserState::archive] = [this](srcSAXEventContext& ctx) {
+                GenerateSampleOfIdentifiers(10);
             };
         }
 };
