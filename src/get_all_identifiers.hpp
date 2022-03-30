@@ -7,18 +7,33 @@
 #include <ParamTypePolicy.hpp>
 #include <srcSAXEventDispatcher.hpp>
 #include <FunctionSignaturePolicy.hpp>
+#include <vector>
+#include <algorithm>
+#include <random>
+
+struct IdentifierData{
+    IdentifierData(std::string type, std::string name, std::string context, std::string fileName, std::string programmingLanguage, std::string lineNumber) 
+    : type{type}, name{name}, context{context}, fileName{fileName}, programmingLanguage{programmingLanguage}, lineNumber{lineNumber} {}
+    
+    std::string type;
+    std::string name;
+    std::string context;
+    std::string lineNumber;
+    std::string fileName;
+    std::string programmingLanguage;
+
+    void PrintIdentifier(){
+        std::cout<<type<<" "<<name<<" "<<context<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
+    }
+};
 
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
-    private:
-        void OutputIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
-            std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
-        }
     public:
-        ~WordsFromArchivePolicy(){};
-        WordsFromArchivePolicy(std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
+        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool seedSet, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
+        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, seedSet{seedSet}{
+            
             InitializeEventHandlers();
-        
             declPolicy.AddListener(this);
             paramPolicy.AddListener(this);
             functionPolicy.AddListener(this);
@@ -29,34 +44,77 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 declarationData = *policy->Data<DeclData>();
                 if(!(declarationData.nameOfIdentifier.empty()||declarationData.nameOfType.empty())){
                     if(ctx.IsOpen(ParserState::function)){
-                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION");
-                    }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() && !declarationData.nameOfIdentifier.empty()){
-                        OutputIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE");
+
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
+                    }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() 
+                             && !declarationData.nameOfIdentifier.empty()){
+                        
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
                     }
                 }
             }else if(typeid(ParamTypePolicy) == typeid(*policy)){
                 parameterData = *policy->Data<DeclData>();
                 if(!(parameterData.nameOfIdentifier.empty() || parameterData.nameOfType.empty())){
-                    OutputIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER");
+
+                    CollectIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+
                 }
             }else if(typeid(FunctionSignaturePolicy) == typeid(*policy)){
                 functionData = *policy->Data<SignatureData>();
                 if(!(functionData.name.empty() || functionData.returnType.empty())){
-                    if(functionData.hasAliasedReturn) functionData.returnType+="*";
-                    OutputIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME");
+                    if(functionData.hasAliasedReturn){
+                        functionData.returnType+="*";
+                    }
+
+                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+
                     for(auto param : functionData.parameters){
-                        OutputIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
+
+                        CollectIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
                     }
                 }
             }
         }
+        
         void NotifyWrite(const PolicyDispatcher *policy, srcSAXEventDispatch::srcSAXEventContext &ctx){}
+        
+        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext,
+                                                 unsigned int lineNumber, std::string fileName, std::string programmingLanguage){
+            if(!sampleSize){
+                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
+            }else{
+                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, std::to_string(lineNumber), fileName, programmingLanguage));        
+            }
+        }
+
+        void GenerateSampleOfIdentifiers(int sampleSize){
+            std::vector<IdentifierData> sampleOfIdentifiers;
+            unsigned int random_seed = seedSet ? randomSeed : std::random_device{}();
+            std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
+                        sampleSize, std::mt19937{random_seed});
+            for(auto identifier : sampleOfIdentifiers){
+               identifier.PrintIdentifier();
+            }
+            std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<". Please SAVE IT."<<std::endl;
+        }
     protected:
         void *DataInner() const override {
             return (void*)0; // export profile to listeners
         }
         
     private:
+        unsigned int sampleSize;
+        unsigned int randomSeed;
+        bool seedSet;
+        std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;
 
@@ -68,6 +126,8 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
 
         void InitializeEventHandlers(){
             using namespace srcSAXEventDispatch;
+            
+            //Open events
             openEventMap[ParserState::declstmt] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->AddListenerDispatch(&declPolicy);
             };
@@ -77,9 +137,14 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             openEventMap[ParserState::function] = [this](srcSAXEventContext& ctx) {
                 ctx.dispatcher->AddListenerDispatch(&functionPolicy);
             };
+
+            //Close events
             closeEventMap[ParserState::classn] = [this](srcSAXEventContext& ctx){
-                if(!ctx.currentClassName.empty())
-                    OutputIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
+                if(!ctx.currentClassName.empty()){
+
+                    CollectIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+                }
             };
             closeEventMap[ParserState::functionblock] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->RemoveListenerDispatch(&functionPolicy);
@@ -89,6 +154,9 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             };
             closeEventMap[ParserState::parameterlist] = [this](srcSAXEventContext& ctx) {
                 ctx.dispatcher->RemoveListenerDispatch(&paramPolicy);
+            };
+            closeEventMap[ParserState::archive] = [this](srcSAXEventContext& ctx) {
+                GenerateSampleOfIdentifiers(sampleSize);
             };
         }
 };
