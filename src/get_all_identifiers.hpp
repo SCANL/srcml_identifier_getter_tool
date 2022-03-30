@@ -30,8 +30,8 @@ struct IdentifierData{
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     public:
-        WordsFromArchivePolicy(unsigned int sampleSize, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
-        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}{
+        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool seedSet, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
+        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, seedSet{seedSet}{
             
             InitializeEventHandlers();
             declPolicy.AddListener(this);
@@ -97,13 +97,13 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
 
         void GenerateSampleOfIdentifiers(int sampleSize){
             std::vector<IdentifierData> sampleOfIdentifiers;
-            unsigned int random_seed = std::random_device{}();
+            unsigned int random_seed = seedSet ? randomSeed : std::random_device{}();
             std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
                         sampleSize, std::mt19937{random_seed});
             for(auto identifier : sampleOfIdentifiers){
                identifier.PrintIdentifier();
             }
-            std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<" Please SAVE IT."<<std::endl;
+            std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<". Please SAVE IT."<<std::endl;
         }
     protected:
         void *DataInner() const override {
@@ -112,6 +112,8 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         
     private:
         unsigned int sampleSize;
+        unsigned int randomSeed;
+        bool seedSet;
         std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;
