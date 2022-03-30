@@ -1,3 +1,6 @@
 [submodule "srcSAXEventDispatch"]
 	path = srcSAXEventDispatch
 	url = git@github.com:srcML/srcSAXEventDispatch.git
+[submodule "popl"]
+	path = popl
+	url = git@github.com:badaix/popl.git

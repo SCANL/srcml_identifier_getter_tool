@@ -41,7 +41,9 @@ include_directories(/usr/local/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/srcSAXEventDispatch/srcSAX/src/windows
                     ${CMAKE_CURRENT_SOURCE_DIR}/srcSAXEventDispatch/src/dispatcher
                     ${CMAKE_CURRENT_SOURCE_DIR}/srcSAXEventDispatch/src/policy_classes
+                    popl/include
                     src)
 
 add_subdirectory(srcSAXEventDispatch)
 add_subdirectory(src)
+add_subdirectory(popl)

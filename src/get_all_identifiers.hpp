@@ -21,9 +21,9 @@ struct IdentifierData{
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     public:
-        WordsFromArchivePolicy(bool shouldTakeSample, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
+        WordsFromArchivePolicy(unsigned int sampleSize, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
             InitializeEventHandlers();
-            this->shouldTakeSample = shouldTakeSample;
+            this->sampleSize = sampleSize;
             declPolicy.AddListener(this);
             paramPolicy.AddListener(this);
             functionPolicy.AddListener(this);
@@ -59,7 +59,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         void NotifyWrite(const PolicyDispatcher *policy, srcSAXEventDispatch::srcSAXEventContext &ctx){}
         
         void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
-            if(!shouldTakeSample){
+            if(!sampleSize){
                 std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
             }else{
                 allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext));        
@@ -80,7 +80,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         }
         
     private:
-        bool shouldTakeSample;
+        unsigned int sampleSize;
         std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;
@@ -120,7 +120,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 ctx.dispatcher->RemoveListenerDispatch(&paramPolicy);
             };
             closeEventMap[ParserState::archive] = [this](srcSAXEventContext& ctx) {
-                GenerateSampleOfIdentifiers(10);
+                GenerateSampleOfIdentifiers(sampleSize);
             };
         }
 };
