@@ -12,18 +12,24 @@
 #include <random>
 
 struct IdentifierData{
-    IdentifierData(std::string type, std::string name, std::string context) : type{type}, name{name}, context{context} {}
+    IdentifierData(std::string type, std::string name, std::string context, std::string fileName, std::string programmingLanguage, std::string lineNumber) 
+    : type{type}, name{name}, context{context}, fileName{fileName}, programmingLanguage{programmingLanguage}, lineNumber{lineNumber} {}
+    
     std::string type;
     std::string name;
     std::string context;
+    std::string lineNumber;
+    std::string fileName;
+    std::string programmingLanguage;
 };
 
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     public:
-        WordsFromArchivePolicy(unsigned int sampleSize, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) : srcSAXEventDispatch::PolicyDispatcher(listeners){
+        WordsFromArchivePolicy(unsigned int sampleSize, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
+        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}{
+            
             InitializeEventHandlers();
-            this->sampleSize = sampleSize;
             declPolicy.AddListener(this);
             paramPolicy.AddListener(this);
             functionPolicy.AddListener(this);
@@ -34,23 +40,41 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 declarationData = *policy->Data<DeclData>();
                 if(!(declarationData.nameOfIdentifier.empty()||declarationData.nameOfType.empty())){
                     if(ctx.IsOpen(ParserState::function)){
-                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION");
-                    }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() && !declarationData.nameOfIdentifier.empty()){
-                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE");
+
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "DECLARATION", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
+                    }else if(ctx.IsOpen(ParserState::classn) && !declarationData.nameOfContainingClass.empty() && !declarationData.nameOfType.empty() 
+                             && !declarationData.nameOfIdentifier.empty()){
+                        
+                        CollectIdentifierTypeNameAndContext(declarationData.nameOfType, declarationData.nameOfIdentifier, "ATTRIBUTE", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
                     }
                 }
             }else if(typeid(ParamTypePolicy) == typeid(*policy)){
                 parameterData = *policy->Data<DeclData>();
                 if(!(parameterData.nameOfIdentifier.empty() || parameterData.nameOfType.empty())){
-                    CollectIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER");
+
+                    CollectIdentifierTypeNameAndContext(parameterData.nameOfType, parameterData.nameOfIdentifier, "PARAMETER", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+
                 }
             }else if(typeid(FunctionSignaturePolicy) == typeid(*policy)){
                 functionData = *policy->Data<SignatureData>();
                 if(!(functionData.name.empty() || functionData.returnType.empty())){
-                    if(functionData.hasAliasedReturn) functionData.returnType+="*";
-                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME");
+                    if(functionData.hasAliasedReturn){
+                        functionData.returnType+="*";
+                    }
+
+                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+
                     for(auto param : functionData.parameters){
-                        CollectIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER");
+
+                        CollectIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER", ctx.currentLineNumber, 
+                                                            ctx.currentFilePath, ctx.currentFileLanguage);
+
                     }
                 }
             }
@@ -58,11 +82,12 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         
         void NotifyWrite(const PolicyDispatcher *policy, srcSAXEventDispatch::srcSAXEventContext &ctx){}
         
-        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext){
+        void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext,
+                                                 unsigned int lineNumber, std::string fileName, std::string programmingLanguage){
             if(!sampleSize){
-                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<std::endl;
+                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
             }else{
-                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext));        
+                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, std::to_string(lineNumber), fileName, programmingLanguage));        
             }
         }
 
@@ -107,8 +132,11 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
 
             //Close events
             closeEventMap[ParserState::classn] = [this](srcSAXEventContext& ctx){
-                if(!ctx.currentClassName.empty())
-                    CollectIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS");
+                if(!ctx.currentClassName.empty()){
+
+                    CollectIdentifierTypeNameAndContext("class", ctx.currentClassName, "CLASS", ctx.currentLineNumber, 
+                                                        ctx.currentFilePath, ctx.currentFileLanguage);
+                }
             };
             closeEventMap[ParserState::functionblock] = [this](srcSAXEventContext& ctx){
                 ctx.dispatcher->RemoveListenerDispatch(&functionPolicy);

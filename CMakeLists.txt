@@ -46,4 +46,3 @@ include_directories(/usr/local/include
 
 add_subdirectory(srcSAXEventDispatch)
 add_subdirectory(src)
-add_subdirectory(popl)
