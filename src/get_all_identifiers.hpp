@@ -21,6 +21,10 @@ struct IdentifierData{
     std::string lineNumber;
     std::string fileName;
     std::string programmingLanguage;
+
+    void PrintIdentifier(){
+        std::cout<<type<<" "<<name<<" "<<context<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
+    }
 };
 
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
@@ -93,11 +97,13 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
 
         void GenerateSampleOfIdentifiers(int sampleSize){
             std::vector<IdentifierData> sampleOfIdentifiers;
+            unsigned int random_seed = std::random_device{}();
             std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
-                        sampleSize, std::mt19937{std::random_device{}()});
+                        sampleSize, std::mt19937{random_seed});
             for(auto identifier : sampleOfIdentifiers){
-                std::cout<<identifier.name<<std::endl;
+               identifier.PrintIdentifier();
             }
+            std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<" Please SAVE IT."<<std::endl;
         }
     protected:
         void *DataInner() const override {
