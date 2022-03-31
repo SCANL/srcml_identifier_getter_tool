@@ -14,6 +14,8 @@ Please clone recursive since we are currently using submodules.
 5. `make`
 6. `./bin/grabidentifiers` - Will give you a list of arguments
 
+You **may** need to `git submodule init` and `git submodule update --remote --recursive` in the srcSAXEventDispatcher, srcSAX, and popl folders.
+
 ## Example usages
 
 These all assume that the incoming file (e.g., telegram.java.xml) is a srcML archive. Refer to the next section if you need srcML.
@@ -32,7 +34,9 @@ Use a sample size of 5 and let the seed be generated randomly:
 ## Help, I don't know what srcML is
 You can get srcML from here -- https://www.srcml.org/
 
-Once you download it and install (or you can just use the executable), you do `srcml <name_of_file_or_directory_containing_code>` and it will create a srcML archive from that directory or code file. You can redirect its output into a file using `>`, or use `srcml -o <FILE>` to output to a specific file. If you need help, use `srcml --help`.
+Once you download it and install (or you can just use the executable), you do `srcml --position <name_of_file_or_directory_containing_code>` and it will create a srcML archive from that directory or code file. You can redirect its output into a file using `>`, or use `srcml --position -o <FILE>` to output to a specific file. If you need help, use `srcml --help`.
+
+You don't have to use `--position` but the tool does collect line number-- line number will be 0 is position is not set.
 
 # Limitations
 Not tested on windows yet :c -- works on Ubuntu, probably most linux distros, and probably mac
