@@ -14,6 +14,8 @@ Please clone recursive since we are currently using submodules.
 5. `make`
 6. `./bin/grabidentifiers` - Will give you a list of arguments
 
+You **may** need to `git submodule init` and `git submodule update --remote --recursive` in the srcSAXEventDispatcher, srcSAX, and popl folders.
+
 ## Example usages
 
 These all assume that the incoming file (e.g., telegram.java.xml) is a srcML archive. Refer to the next section if you need srcML.
