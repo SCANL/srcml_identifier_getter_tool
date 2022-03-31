@@ -22,8 +22,9 @@ struct IdentifierData{
     std::string fileName;
     std::string programmingLanguage;
 
-    void PrintIdentifier(){
-        std::cout<<type<<" "<<name<<" "<<context<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
+    friend std::ostream& operator<<(std::ostream& outputStream, const IdentifierData& identifier){
+        outputStream<<identifier.type<<" "<<identifier.name<<" "<<identifier.context<<" "<<identifier.lineNumber<<" "<<identifier.fileName<<" "<<identifier.programmingLanguage;
+        return outputStream;
     }
 };
 
@@ -101,7 +102,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
                         sampleSize, std::mt19937{random_seed});
             for(auto identifier : sampleOfIdentifiers){
-               identifier.PrintIdentifier();
+               std::cout<<identifier<<std::endl;
             }
             std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<". Please SAVE IT."<<std::endl;
         }
