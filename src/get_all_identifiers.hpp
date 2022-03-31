@@ -12,18 +12,19 @@
 #include <random>
 
 struct IdentifierData{
-    IdentifierData(std::string type, std::string name, std::string context, std::string fileName, std::string programmingLanguage, std::string lineNumber) 
-    : type{type}, name{name}, context{context}, fileName{fileName}, programmingLanguage{programmingLanguage}, lineNumber{lineNumber} {}
+    IdentifierData(std::string type, std::string name, std::string context, std::string fileName, std::string programmingLanguageName, std::string lineNumber) 
+    : type{type}, name{name}, context{context}, fileName{fileName}, programmingLanguageName{programmingLanguageName}, lineNumber{lineNumber} {}
     
     std::string type;
     std::string name;
     std::string context;
     std::string lineNumber;
     std::string fileName;
-    std::string programmingLanguage;
+    std::string programmingLanguageName;
 
     friend std::ostream& operator<<(std::ostream& outputStream, const IdentifierData& identifier){
-        outputStream<<identifier.type<<" "<<identifier.name<<" "<<identifier.context<<" "<<identifier.lineNumber<<" "<<identifier.fileName<<" "<<identifier.programmingLanguage;
+        outputStream<<identifier.type<<" "<<identifier.name<<" "<<identifier.context<<" "
+                    <<identifier.lineNumber<<" "<<identifier.fileName<<" "<<identifier.programmingLanguageName;
         return outputStream;
     }
 };
@@ -31,8 +32,8 @@ struct IdentifierData{
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     public:
-        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool seedSet, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
-        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, seedSet{seedSet}{
+        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool isSeedSet, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
+        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, isSeedSet{isSeedSet}{
             
             InitializeEventHandlers();
             declPolicy.AddListener(this);
@@ -88,17 +89,17 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         void NotifyWrite(const PolicyDispatcher *policy, srcSAXEventDispatch::srcSAXEventContext &ctx){}
         
         void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext,
-                                                 unsigned int lineNumber, std::string fileName, std::string programmingLanguage){
+                                                 unsigned int lineNumber, std::string fileName, std::string programmingLanguageName){
             if(!sampleSize){
-                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguage<<std::endl;
+                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguageName<<std::endl;
             }else{
-                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, std::to_string(lineNumber), fileName, programmingLanguage));        
+                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, std::to_string(lineNumber), fileName, programmingLanguageName));        
             }
         }
 
         void GenerateSampleOfIdentifiers(int sampleSize){
             std::vector<IdentifierData> sampleOfIdentifiers;
-            unsigned int random_seed = seedSet ? randomSeed : std::random_device{}();
+            unsigned int random_seed = isSeedSet ? randomSeed : std::random_device{}();
             std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
                         sampleSize, std::mt19937{random_seed});
             for(auto identifier : sampleOfIdentifiers){
@@ -114,7 +115,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
     private:
         unsigned int sampleSize;
         unsigned int randomSeed;
-        bool seedSet;
+        bool isSeedSet;
         std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;

@@ -7,7 +7,7 @@ int main(int argc, char** argv){
     
     unsigned int sampleSize = 0;
     unsigned int randomSeed = 0;
-    bool seedSet = false;
+    bool isSeedSet = false;
 
     OptionParser commandLineOptions("allowed options");
     auto helpOption = commandLineOptions.add<Switch>("h", "help", "show a help message");
@@ -28,7 +28,7 @@ int main(int argc, char** argv){
 
     if(seedOption->is_set()){
         randomSeed = seedOption->value();
-        seedSet = true;
+        isSeedSet = true;
         if(!sampleOption->is_set()){
             std::cerr<<"You set a seed without specifying a sample. Please set a sample with -s."<<std::endl;
             return EXIT_FAILURE;
@@ -37,7 +37,7 @@ int main(int argc, char** argv){
 
     if(commandLineOptions.non_option_args().size() == 1){
         std::string fileName = commandLineOptions.non_option_args().back();
-        WordsFromArchivePolicy* cat = new WordsFromArchivePolicy(sampleSize, randomSeed, seedSet);
+        WordsFromArchivePolicy* cat = new WordsFromArchivePolicy(sampleSize, randomSeed, isSeedSet);
         srcSAXController control(fileName.c_str());
         srcSAXEventDispatch::srcSAXEventDispatcher<> handler({cat}, false);
         control.parse(&handler); //Start parsing
