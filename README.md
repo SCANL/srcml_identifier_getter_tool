@@ -21,15 +21,21 @@ You **may** need to `git submodule init` and `git submodule update --remote --re
 These all assume that the incoming file (e.g., telegram.java.xml) is a srcML archive. Refer to the next section if you need srcML.
 ```
 Get all identifiers from the a srcml archive:
+
 ./build/bin/grabidentifiers telegram.java.xml
 
 Use a sample size of 5 and a random seed of 207085357:
+
 ./build/bin/grabidentifiers -s5 -r207085357 telegram.java.xml_position 
 
 Use a sample size of 5 and let the seed be generated randomly:
+
 ./build/bin/grabidentifiers -s5 telegram.java.xml_position 
 
-Use a sample size of 14, let the seed be generated randomly, and specify which contexts you want to draw a sample from. This will draw a balanced sample from the contexts provided via -c. If we cannot evenly distribute between the provided contexts, we will add (sample size % #contexts) to the sample size to make it even.
+Use a sample size of 14, let the seed be generated randomly, and specify which contexts you want to draw a sample from. 
+This will draw a balanced sample from the contexts provided via -c. If we cannot evenly distribute between the provided 
+contexts, we will add (sample size % #contexts) to the sample size to make it even:
+
 ./build/bin/grabidentifiers -s14 -cPARAMETER,FUNCTION,DECLARATION telegram.java.xml_position
 ```
 
