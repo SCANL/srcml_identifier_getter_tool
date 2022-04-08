@@ -28,6 +28,9 @@ Use a sample size of 5 and a random seed of 207085357:
 
 Use a sample size of 5 and let the seed be generated randomly:
 ./build/bin/grabidentifiers -s5 telegram.java.xml_position 
+
+Use a sample size of 15, let the seed be generated randomly, and specify which contexts you want to draw a sample from. This will draw a balanced sample from the contexts provided via -c:
+./build/bin/grabidentifiers -s14 -cPARAMETER,FUNCTION,DECLARATION telegram.java.xml_position
 ```
 
 
