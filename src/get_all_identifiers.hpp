@@ -10,6 +10,16 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <map>
+
+enum Context {ATTRIBUTE, CLASS, DECLARATION, FUNCTION, PARAMETER};
+std::map<std::string, Context> stringToContextMap = {
+    {"ATTRIBUTE", Context::ATTRIBUTE},
+    {"CLASS", Context::CLASS},
+    {"DECLARATION", Context::DECLARATION},
+    {"FUNCTION", Context::FUNCTION},
+    {"PARAMETER", Context::PARAMETER}
+};
 
 struct IdentifierData{
     IdentifierData(std::string type, std::string name, std::string context, std::string fileName, std::string programmingLanguageName, std::string lineNumber) 
@@ -32,8 +42,10 @@ struct IdentifierData{
 class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public srcSAXEventDispatch::PolicyDispatcher, public srcSAXEventDispatch::PolicyListener 
 {
     public:
-        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool isSeedSet, std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}) 
-        : srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, isSeedSet{isSeedSet}{
+        WordsFromArchivePolicy(unsigned int sampleSize, unsigned int randomSeed, bool isSeedSet, std::vector<Context> requiredContexts, 
+                               std::initializer_list<srcSAXEventDispatch::PolicyListener*> listeners = {}):
+                               srcSAXEventDispatch::PolicyDispatcher(listeners), sampleSize{sampleSize}, randomSeed{randomSeed}, 
+                               isSeedSet{isSeedSet}, requiredContexts{requiredContexts}{
             
             InitializeEventHandlers();
             declPolicy.AddListener(this);
@@ -73,15 +85,9 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                         functionData.returnType+="*";
                     }
 
-                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION NAME", ctx.currentLineNumber, 
+                    CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION", ctx.currentLineNumber, 
                                                         ctx.currentFilePath, ctx.currentFileLanguage);
 
-                    for(auto param : functionData.parameters){
-
-                        CollectIdentifierTypeNameAndContext(functionData.returnType, param.nameOfIdentifier, "FUNCTION PARAMETER", ctx.currentLineNumber, 
-                                                            ctx.currentFilePath, ctx.currentFileLanguage);
-
-                    }
                 }
             }
         }
@@ -97,14 +103,53 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             }
         }
 
-        void GenerateSampleOfIdentifiers(int sampleSize){
+        void GenerateSampleOfIdentifiers(int rawSampleSize){
             std::vector<IdentifierData> sampleOfIdentifiers;
+            
             unsigned int random_seed = isSeedSet ? randomSeed : std::random_device{}();
-            std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
-                        sampleSize, std::mt19937{random_seed});
-            for(auto identifier : sampleOfIdentifiers){
-               std::cout<<identifier<<std::endl;
+            
+            int sampleSize = 0;
+
+            if(requiredContexts.size() > 0){
+                std::map<Context, std::vector<IdentifierData>> buckets;
+
+                buckets[Context::PARAMETER] = std::vector<IdentifierData>();
+                buckets[Context::ATTRIBUTE] = std::vector<IdentifierData>();
+                buckets[Context::FUNCTION] = std::vector<IdentifierData>();
+                buckets[Context::DECLARATION] = std::vector<IdentifierData>();
+                buckets[Context::CLASS] = std::vector<IdentifierData>();
+                
+                //if we can't divide evenly into the buckets, take the mod and add it to the requested sample size
+                sampleSize = rawSampleSize % requiredContexts.size() ? 
+                            (rawSampleSize + (rawSampleSize % requiredContexts.size())) / requiredContexts.size() : rawSampleSize/requiredContexts.size();
+
+                //separate identifiers into buckets based on context
+                for(auto identifier : allSystemIdentifiers){
+                    for(auto contextId : requiredContexts){
+                        if(stringToContextMap[identifier.context] == contextId){
+                            buckets[contextId].push_back(identifier);
+                        }
+                    }
+                }
+
+                //sample from each bucket based on our sampleSize
+                for(auto bucket : buckets){
+                    if(bucket.second.size() != 0){
+                        std::sample(bucket.second.begin(), bucket.second.end(), std::back_inserter(sampleOfIdentifiers), 
+                                sampleSize, std::mt19937{random_seed});
+                    }
+                }
+                for(auto identifier : sampleOfIdentifiers){
+                    std::cout<<identifier<<std::endl;
+                }
+            }else{
+                std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
+                            rawSampleSize, std::mt19937{random_seed});
+                for(auto identifier : sampleOfIdentifiers){
+                    std::cout<<identifier<<std::endl;
+                }
             }
+
             std::cout<<"YOUR RANDOM SEED IS: "<<random_seed<<". Please SAVE IT."<<std::endl;
         }
     protected:
@@ -116,6 +161,7 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         unsigned int sampleSize;
         unsigned int randomSeed;
         bool isSeedSet;
+        std::vector<Context> requiredContexts;
         std::vector<IdentifierData> allSystemIdentifiers;
         DeclTypePolicy declPolicy;
         DeclData declarationData;
