@@ -103,10 +103,14 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             }
         }
 
-        void GenerateSampleOfIdentifiers(int sampleSize){
+        void GenerateSampleOfIdentifiers(int rawSampleSize){
             std::vector<IdentifierData> sampleOfIdentifiers;
+            
             unsigned int random_seed = isSeedSet ? randomSeed : std::random_device{}();
-            if(requiredContexts.size()){
+            
+            int sampleSize = 0;
+
+            if(requiredContexts.size() > 0){
                 std::map<Context, std::vector<IdentifierData>> buckets;
 
                 buckets[Context::PARAMETER] = std::vector<IdentifierData>();
@@ -115,6 +119,11 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                 buckets[Context::DECLARATION] = std::vector<IdentifierData>();
                 buckets[Context::CLASS] = std::vector<IdentifierData>();
                 
+                //if we can't divide evenly into the buckets, take the mod and add it to the requested sample size
+                sampleSize = rawSampleSize % requiredContexts.size() ? 
+                            (rawSampleSize + (rawSampleSize % requiredContexts.size())) / requiredContexts.size() : rawSampleSize/requiredContexts.size();
+
+                //separate identifiers into buckets based on context
                 for(auto identifier : allSystemIdentifiers){
                     for(auto contextId : requiredContexts){
                         if(stringToContextMap[identifier.context] == contextId){
@@ -122,13 +131,20 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
                         }
                     }
                 }
-                for(auto bucket : buckets){
-                    std::cout<<bucket.second.size()<<std::endl;
-                }
 
+                //sample from each bucket based on our sampleSize
+                for(auto bucket : buckets){
+                    if(bucket.second.size() != 0){
+                        std::sample(bucket.second.begin(), bucket.second.end(), std::back_inserter(sampleOfIdentifiers), 
+                                sampleSize, std::mt19937{random_seed});
+                    }
+                }
+                for(auto identifier : sampleOfIdentifiers){
+                    std::cout<<identifier<<std::endl;
+                }
             }else{
                 std::sample(allSystemIdentifiers.begin(), allSystemIdentifiers.end(), std::back_inserter(sampleOfIdentifiers), 
-                            sampleSize, std::mt19937{random_seed});
+                            rawSampleSize, std::mt19937{random_seed});
                 for(auto identifier : sampleOfIdentifiers){
                     std::cout<<identifier<<std::endl;
                 }
