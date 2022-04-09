@@ -34,7 +34,7 @@ struct IdentifierData{
 
     friend std::ostream& operator<<(std::ostream& outputStream, const IdentifierData& identifier){
         outputStream<<identifier.type<<" "<<identifier.name<<" "<<identifier.context<<" "
-                    <<identifier.fileName<<" "<<identifier.programmingLanguageName<<":"<<identifier.lineNumber;
+                    <<identifier.programmingLanguageName<<" "<<identifier.fileName<<":"<<identifier.lineNumber;
         return outputStream;
     }
 };
