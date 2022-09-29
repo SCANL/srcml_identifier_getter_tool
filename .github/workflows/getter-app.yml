@@ -13,7 +13,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image:sourceslicer/identifier_checker_base:latest
+      image:sourceslicer/identifier_checker_base
 
     steps:
     - uses: actions/checkout@v2
