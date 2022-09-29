@@ -23,9 +23,9 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install flake8
-        python3 -m pip install git+https://github.com/casics/spiral.git
+        python -m pip install --upgrade pip
+        python -m pip install flake8
+        python -m pip install git+https://github.com/casics/spiral.git
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
@@ -35,4 +35,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with unittest
       run: |
-        python3 ../../../identifier_convention_checker/run.py src/get_all_identifiers.cpp
+        python ../../../identifier_convention_checker/run.py src/get_all_identifiers.cpp
