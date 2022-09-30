@@ -36,4 +36,4 @@ jobs:
     - name: Test with unittest
       run: |
         cd ../../../identifier_convention_checker && python -m pip install -r requirements.txt
-        python ../../../identifier_convention_checker/run.py src/get_all_identifiers.cpp
+        python ../../../identifier_convention_checker/run.py  ${GITHUB_WORKSPACE}/src/get_all_identifiers.cpp
