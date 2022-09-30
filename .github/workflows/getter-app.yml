@@ -27,6 +27,7 @@ jobs:
         python -m pip install flake8
         python -m pip install git+https://github.com/casics/spiral.git
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ../../../identifier_convention_checker && python -m pip install -r requirements.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -35,5 +36,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with unittest
       run: |
-        cd ../../../identifier_convention_checker && python -m pip install -r requirements.txt
         python ../../../identifier_convention_checker/run.py  ${GITHUB_WORKSPACE}/src/get_all_identifiers.cpp
