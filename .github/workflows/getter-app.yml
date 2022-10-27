@@ -36,4 +36,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Check Identifier Names
       run: |
-        python ../../../identifier_convention_checker/run.py  ${GITHUB_WORKSPACE}/src/get_all_identifiers.cpp
+        cd ../../../identifier_convention_checker && python ../../../identifier_convention_checker/run.py  ${GITHUB_WORKSPACE}/src/get_all_identifiers.cpp
