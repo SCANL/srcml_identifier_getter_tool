@@ -23,7 +23,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
-        apt get install git
+        apt install git
         python -m pip install --upgrade pip
         python -m pip install flake8
         python -m pip install git+https://github.com/casics/spiral.git
