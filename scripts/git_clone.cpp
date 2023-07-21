@@ -33,7 +33,7 @@ int main() {
     git_libgit2_init();
 
     std::vector<std::string> git_links = {
-        "https://github.com/arangodb/arangodb.git",
+        "https://github.com/s3fs-fuse/s3fs-fuse.git",
         "https://github.com/wireshark/wireshark.git",
         "https://github.com/igniterealtime/Openfire.git",
         "https://github.com/google/guava.git",
