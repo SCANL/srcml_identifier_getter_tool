@@ -34,7 +34,7 @@ struct IdentifierData{
 
     friend std::ostream& operator<<(std::ostream& outputStream, const IdentifierData& identifier){
         outputStream<<identifier.type<<" "<<identifier.name<<" "<<identifier.context<<" "
-                    <<identifier.lineNumber<<" "<<identifier.fileName<<" "<<identifier.programmingLanguageName;
+                    <<identifier.programmingLanguageName<<" "<<identifier.fileName<<":"<<identifier.lineNumber;
         return outputStream;
     }
 };
@@ -81,9 +81,6 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
             }else if(typeid(FunctionSignaturePolicy) == typeid(*policy)){
                 functionData = *policy->Data<SignatureData>();
                 if(!(functionData.name.empty() || functionData.returnType.empty())){
-                    if(functionData.hasAliasedReturn){
-                        functionData.returnType+="*";
-                    }
 
                     CollectIdentifierTypeNameAndContext(functionData.returnType, functionData.name, "FUNCTION", ctx.currentLineNumber, 
                                                         ctx.currentFilePath, ctx.currentFileLanguage);
@@ -97,9 +94,9 @@ class WordsFromArchivePolicy : public srcSAXEventDispatch::EventListener, public
         void CollectIdentifierTypeNameAndContext(std::string identifierType, std::string identifierName, std::string codeContext,
                                                  unsigned int lineNumber, std::string fileName, std::string programmingLanguageName){
             if(!sampleSize){
-                std::cout<<identifierType<<" "<<identifierName<<" "<<codeContext<<" "<<lineNumber<<" "<<fileName<<" "<<programmingLanguageName<<std::endl;
+                std::cout<<IdentifierData(identifierType, identifierName, codeContext, fileName, programmingLanguageName, std::to_string(lineNumber));
             }else{
-                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, std::to_string(lineNumber), fileName, programmingLanguageName));        
+                allSystemIdentifiers.push_back(IdentifierData(identifierType, identifierName, codeContext, fileName, programmingLanguageName, std::to_string(lineNumber)));
             }
         }
 
