@@ -52,7 +52,17 @@ int main() {
         "https://github.com/vgvassilev/cling.git",
         "https://github.com/weechat/weechat.git",
         "https://github.com/cglib/cglib.git",
-        "https://github.com/panda3d/panda3d.git"
+        "https://github.com/panda3d/panda3d.git",
+        "https://github.com/igraph/rigraph.git",
+        "https://github.com/meta-toolkit/meta.git",
+        "https://github.com/igniterealtime/Spark.git",
+        "https://github.com/ropensci/git2r.git",
+        "https://github.com/freeminer/freeminer.git",
+        "https://github.com/igniterealtime/Smack.git",
+        "https://github.com/naemon/naemon-core.git",
+        "https://github.com/fakeNetflix/facebook-repo-ds2.git",
+        "https://github.com/HubSpot/Singularity.git",
+        "https://github.com/Juniper/libxo.git",
     };
 
     std::string destination_folder = "cloned_repositories";
