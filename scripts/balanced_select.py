@@ -1,13 +1,14 @@
 import os
 import random
 import argparse
+from spiral import ronin
 
 def read_file_into_list(file_path):
     result_list = []
 
     with open(file_path, 'r') as file:
         for line in file:
-            line_values = line.strip().split()
+            line_values = line.strip().split(',')
             result_list.append(line_values)
 
     return result_list
@@ -43,10 +44,10 @@ if __name__ == "__main__":
     data_list = read_files_from_directory(args.directory_path)
 
     attribute_groups = group_by_attribute(data_list)
-    sample_size = 33  # Set the desired sample size for each attribute group
+    sample_size = 30  # Set the desired sample size for each attribute group
 
     balanced_sample = take_balanced_sample(attribute_groups, sample_size)
 
     # Print the balanced sample to check the result
     for line_values in balanced_sample:
-        print(line_values)
+        print(','.join(line_values))

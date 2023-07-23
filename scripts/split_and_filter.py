@@ -23,19 +23,24 @@ def parse_csv_files(directory_path):
             with open(file_path, 'r') as csv_file:
                 reader = csv.reader(csv_file, delimiter=' ')
                 num_dets = num_cjs = 0
+                if not os.path.exists("results"):
+                    os.makedirs("results")
                 with open ('results/conjunctions', 'a') as cjs, open ('results/determiners', 'a') as dts,open ('results/counts', 'a') as cts:
                     print("\n\nCurrently scanning: {file}\n\n".format(file=file_path), file=cts)
+                    words_weve_seen = set()
                     for row in reader:
                         file_split = row[5].split('/')
                         word_list = ronin.split(row[1])  # Modify this line to process each row as needed
-                        if any(re.search(r'\b[a-z_]*test[a-z_]*\b', x.lower()) for x in file_split) or any(re.search(r'\b[a-z_]*test[a-z_]*\b', x.lower()) for x in word_list):
+                        row.append(' '.join(word_list))
+                        if any(re.search(r'\b[a-z_]*test[a-z_]*\b', x.lower()) for x in file_split) or any(re.search(r'\b[a-z_]*test[a-z_]*\b', x.lower()) for x in word_list) or (row[1] in words_weve_seen):
                             continue
                         if any(str1 == str2 for str1 in word_list for str2 in conjunctions):
                             num_dets = num_dets + 1
-                            print(' '.join(row), file=cjs)
+                            print(','.join(row), file=cjs)
                         if any(str1 == str2 for str1 in word_list for str2 in determiners):
                             num_cjs = num_cjs + 1
-                            print(' '.join(row), file=dts)
+                            print(','.join(row), file=dts)
+                        words_weve_seen.add(row[1])
                     print("\n\nFinish scanning: {file}\n\n Number of identifiers {num_dets}, {num_cjs}".format(num_dets=num_dets, num_cjs=num_cjs, file=file_path), file=cts)
 
 if __name__ == "__main__":

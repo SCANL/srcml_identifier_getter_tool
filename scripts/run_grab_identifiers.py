@@ -9,7 +9,7 @@ def run_grabidentifiers(directory_path):
         # Check if the entry is a regular file, if so, run grabidentifiers
         if os.path.isfile(file_path):
             output_file = file_path + '.csv'
-            command_args = ['./grabidentifiers', '-cFUNCTION,PARAMETER,DECLARATION,CLASS,ATTRIBUTE', file_path]
+            command_args = ['./build/bin/grabidentifiers', '-cFUNCTION,PARAMETER,DECLARATION,CLASS,ATTRIBUTE', file_path]
 
             try:
                 with open(output_file, 'w') as output:
